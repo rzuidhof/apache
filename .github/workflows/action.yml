@@ -39,6 +39,6 @@ jobs:
 
       - name: Create and push tag
         run: |
-          TAG="v${{ steps.version.outputs.version }}"
+          TAG="${{ steps.version.outputs.version }}"
           git tag "$TAG"
           git push origin "$TAG"
