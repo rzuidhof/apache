@@ -42,3 +42,34 @@ jobs:
           TAG="${{ steps.version.outputs.version }}"
           git tag "$TAG"
           git push origin "$TAG"
+
+  release:
+    if: github.event.pull_request.merged == true
+    needs: tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read version from metadata.json
+        id: version
+        run: |
+          VERSION=$(jq -r '.version' metadata.json)
+          if [[ "$VERSION" == "null" || -z "$VERSION" ]]; then
+            echo "Version not found in metadata.json"
+            exit 1
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: Release ${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
